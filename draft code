@@ -1,0 +1,49 @@
+#include <Servo.h>
+
+// Define the pins we're using
+const int opticalSensorPin = 2;     // Optical sensor to detect car at the entrance
+const int ldrPin = A0;              // LDR sensor inside the parking space
+const int ledPin = 8;               // LED that turns on when a car is parked
+const int thresholdLDR = 500;       // Light level threshold to detect a parked car
+
+Servo gateMotor;                    // Create a servo object to control the gate
+const int motorPin = 9;             // Motor is connected to pin 9
+
+bool gateOpen = false;              // To remember if the gate is currently open
+
+void setup() {
+  pinMode(opticalSensorPin, INPUT);   // We read data from the optical sensor
+  pinMode(ledPin, OUTPUT);            // We'll control the LED (turn on/off)
+  gateMotor.attach(motorPin);         // Connect the servo motor to the pin
+  gateMotor.write(0);                 // Start with gate closed (0 degrees)
+  Serial.begin(9600);                 // Start serial monitor for testing
+}
+
+void loop() {
+  // Part 1: Check if a car is arriving at the entrance
+  int carDetected = digitalRead(opticalSensorPin);  // Read sensor data
+
+  // If a car is detected and the gate is not already open
+  if (carDetected == HIGH && !gateOpen) {
+    Serial.println("Car detected! Opening the gate...");
+    gateMotor.write(90);            // Open the gate (turn servo to 90 degrees)
+    gateOpen = true;                // Mark that gate is now open
+    delay(3000);                    // Wait 3 seconds to let car pass
+    gateMotor.write(0);             // Close the gate (back to 0 degrees)
+    gateOpen = false;               // Gate is closed again
+  }
+
+  // Part 2: Check if a car is parked using the LDR sensor
+  int ldrValue = analogRead(ldrPin);   // Read the LDR value
+  Serial.print("LDR Value: ");
+  Serial.println(ldrValue);
+
+  // If the LDR reads a low value (meaning it's dark = car is blocking light)
+  if (ldrValue < thresholdLDR) {
+    digitalWrite(ledPin, HIGH);     // Turn on LED to show car is parked
+  } else {
+    digitalWrite(ledPin, LOW);      // Turn off LED (no car parked)
+  }
+
+  delay(500);  // Short delay to avoid rapid readings
+}
